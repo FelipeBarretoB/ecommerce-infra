@@ -1,0 +1,90 @@
+name: Terraform AKS Infra
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - '**.tf'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '**.tf'
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+
+    env:
+      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Check if backend storage account is set
+        id: check_backend
+        run: |
+          if grep -q '<replace-with-tfstate1-storage-account-name>' backend.tf; then
+            echo "backend_not_set=true" >> $GITHUB_OUTPUT
+          else
+            echo "backend_not_set=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Azure Login
+        if: steps.check_backend.outputs.backend_not_set == 'true'
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Terraform Init (local state)
+        if: steps.check_backend.outputs.backend_not_set == 'true'
+        run: terraform init -backend=false
+
+      - name: Terraform Apply (create storage)
+        if: steps.check_backend.outputs.backend_not_set == 'true'
+        run: terraform apply -auto-approve
+
+      - name: Get Storage Account Name
+        if: steps.check_backend.outputs.backend_not_set == 'true'
+        id: get_storage
+        run: |
+          STORAGE=$(terraform output -raw azurerm_storage_account_tfstate1_name 2>/dev/null || \
+            az storage account list --resource-group ecommerce-rg --query "[?contains(name, 'ecommercetfstate1')].name" -o tsv | head -n1)
+          echo "storage_account_name=$STORAGE" >> $GITHUB_OUTPUT
+
+      - name: Commit and push backend.tf update
+        if: steps.check_backend.outputs.backend_not_set == 'true'
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+          git add backend.tf
+          git commit -m "Set backend storage account name in backend.tf [skip ci]" || echo "No changes to commit"
+          git push
+
+      - name: Update backend.tf
+        if: steps.check_backend.outputs.backend_not_set == 'true'
+        run: |
+          sed -i "s/<replace-with-tfstate1-storage-account-name>/${{ steps.get_storage.outputs.storage_account_name }}/" backend.tf
+
+      - name: Terraform Init (with backend)
+        if: steps.check_backend.outputs.backend_not_set == 'false'
+        run: terraform init
+
+      - name: Terraform Plan
+        if: steps.check_backend.outputs.backend_not_set == 'false'
+        run: terraform plan
+
+      - name: Terraform Apply
+        if: steps.check_backend.outputs.backend_not_set == 'false'
+        run: terraform apply -auto-approve
