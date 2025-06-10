@@ -54,6 +54,8 @@ jobs:
         run: | 
           terraform init -backend=false
           terraform import azurerm_resource_group.rg1 /subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/ecommerce-rg || echo "Already imported"
+          terraform import azurerm_resource_group.rg2 /subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/ecommerce-rg-2 || echo "Already imported"
+          terraform import azurerm_kubernetes_cluster.aks1 /subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/ecommerce-rg/providers/Microsoft.ContainerService/managedClusters/ecommerce-cluster || echo "Already imported"
 
       - name: Terraform Apply (create storage)
         if: steps.check_backend.outputs.backend_not_set == 'true'

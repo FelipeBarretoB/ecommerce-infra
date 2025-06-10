@@ -31,7 +31,7 @@ resource "azurerm_storage_container" "tfstate1" {
 }
 
 resource "azurerm_kubernetes_cluster" "aks1" {
-  name                = "ecommerce-aks-1"
+  name                = "ecommerce-cluster"
   location            = azurerm_resource_group.rg1.location
   resource_group_name = azurerm_resource_group.rg1.name
   dns_prefix          = "ecommerceaks1"
@@ -75,7 +75,7 @@ resource "azurerm_storage_container" "tfstate2" {
 }
 
 resource "azurerm_kubernetes_cluster" "aks2" {
-  name                = "ecommerce-aks-2"
+  name                = "ecommerce-aks"
   location            = azurerm_resource_group.rg2.location
   resource_group_name = azurerm_resource_group.rg2.name
   dns_prefix          = "ecommerceaks2"
