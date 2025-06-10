@@ -51,7 +51,9 @@ jobs:
 
       - name: Terraform Init (local state)
         if: steps.check_backend.outputs.backend_not_set == 'true'
-        run: terraform init -backend=false
+        run: | 
+          terraform init -backend=false
+          terraform import azurerm_resource_group.rg1 /subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/ecommerce-rg || echo "Already imported"
 
       - name: Terraform Apply (create storage)
         if: steps.check_backend.outputs.backend_not_set == 'true'
