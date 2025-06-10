@@ -4,12 +4,6 @@ resource "random_string" "suffix1" {
   special = false
 }
 
-resource "random_string" "suffix2" {
-  length  = 6
-  upper   = false
-  special = false
-}
-
 # Resource Group and Storage for Cluster 1
 resource "azurerm_resource_group" "rg1" {
   name     = "ecommerce-rg"
