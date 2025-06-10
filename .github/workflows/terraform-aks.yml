@@ -28,15 +28,6 @@ jobs:
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v3
 
-      - name: Check if backend storage account is set
-        id: check_backend
-        run: |
-          if grep -q '<replace-with-tfstate1-storage-account-name>' backend.tf; then
-            echo "backend_not_set=true" >> $GITHUB_OUTPUT
-          else
-            echo "backend_not_set=false" >> $GITHUB_OUTPUT
-          fi
-
       - name: Azure Login
         uses: azure/login@v2
         with:
@@ -49,62 +40,9 @@ jobs:
           az storage account create --name ecommercetfstate1bl0fci --resource-group ecommerce-rg --location eastus --sku Standard_LRS || echo "Storage account already exists"
           az storage container create --account-name ecommercetfstate1bl0fci --name tfstate
 
-      - name: Temporarily move backend.tf
-        if: steps.check_backend.outputs.backend_not_set == 'true'
-        run: mv backend.tf backend.tf.bak
-
-      - name: Terraform Init (local state)
-        if: steps.check_backend.outputs.backend_not_set == 'true'
-        run: | 
-          terraform init -backend=false
-          terraform import azurerm_resource_group.rg1 /subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/ecommerce-rg || echo "Already imported"
-          terraform import azurerm_resource_group.rg2 /subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/ecommerce-rg-2 || echo "Already imported"
-          terraform import azurerm_kubernetes_cluster.aks1 /subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/ecommerce-rg/providers/Microsoft.ContainerService/managedClusters/ecommerce-cluster || echo "Already imported"
-
-      - name: Terraform Plan
-        if: steps.check_backend.outputs.backend_not_set == 'true'
-        run: terraform plan
-
-      - name: Terraform Apply (create storage)
-        if: steps.check_backend.outputs.backend_not_set == 'true'
-        run: terraform apply -auto-approve
-
-      - name: Restore backend.tf
-        if: steps.check_backend.outputs.backend_not_set == 'true'
-        run: mv backend.tf.bak backend.tf 
-
-      - name: Get Storage Account Name
-        if: steps.check_backend.outputs.backend_not_set == 'true'
-        id: get_storage
-        run: |
-          STORAGE=$(terraform output -raw azurerm_storage_account_tfstate1_name 2>/dev/null || \
-            az storage account list --resource-group ecommerce-rg --query "[?contains(name, 'ecommercetfstate1')].name" -o tsv | head -n1)
-          echo "storage_account_name=$STORAGE" >> $GITHUB_OUTPUT
-
-      - name: Commit and push backend.tf update
-        if: steps.check_backend.outputs.backend_not_set == 'true'
-        run: |
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git config --global user.name "github-actions[bot]"
-          git add backend.tf
-          git commit -m "Set backend storage account name in backend.tf [skip ci]" || echo "No changes to commit"
-          git push
-
-      - name: Update backend.tf
-        if: steps.check_backend.outputs.backend_not_set == 'true'
-        run: |
-          sed -i "s/<replace-with-tfstate1-storage-account-name>/${{ steps.get_storage.outputs.storage_account_name }}/" backend.tf
-
       - name: Terraform Init (with backend)
-        if: steps.check_backend.outputs.backend_not_set == 'false'
         run: |
           terraform init
-          terraform import azurerm_kubernetes_cluster_node_pool.d2pool1 /subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/ecommerce-rg/providers/Microsoft.ContainerService/managedClusters/ecommerce-cluster/agentPools/d2pool
-
-      - name: Terraform Plan
-        if: steps.check_backend.outputs.backend_not_set == 'false'
-        run: terraform plan
 
       - name: Terraform Apply
-        if: steps.check_backend.outputs.backend_not_set == 'false'
         run: terraform apply -auto-approve
