@@ -43,6 +43,11 @@ jobs:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      
+      - name: create storage account if not exists
+        run: |
+          az storage account create --name ecommercetfstate1bl0fci --resource-group ecommerce-rg --location eastus --sku Standard_LRS || echo "Storage account already exists"
+          az storage container create --account-name ecommercetfstate1bl0fci --name tfstate
 
       - name: Temporarily move backend.tf
         if: steps.check_backend.outputs.backend_not_set == 'true'
@@ -98,6 +103,7 @@ jobs:
           terraform import azurerm_resource_group.rg2 /subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/ecommerce-rg-2 || echo "Already imported"
           terraform import azurerm_kubernetes_cluster.aks1 /subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/ecommerce-rg/providers/Microsoft.ContainerService/managedClusters/ecommerce-cluster || echo "Already imported"
           terraform import azurerm_kubernetes_cluster.aks2 /subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/ecommerce-rg-2/providers/Microsoft.ContainerService/managedClusters/ecommerce-aks || echo "Already imported"
+          terraform import azurerm_storage_account.tfstate1 /subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/ecommerce-rg/providers/Microsoft.Storage/storageAccounts/ecommercetfstate1bl0fci
           terraform import azurerm_storage_container.tfstate1 /subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/ecommerce-rg/providers/Microsoft.Storage/storageAccounts/ecommercetfstate1bl0fci/blobServices/default/containers/tfstate
 
       - name: Terraform Plan
