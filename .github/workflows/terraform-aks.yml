@@ -51,6 +51,10 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+      - name: Temporarily move backend.tf
+        if: steps.check_backend.outputs.backend_not_set == 'true'
+        run: mv backend.tf backend.tf.bak
+
       - name: Terraform Init (local state)
         if: steps.check_backend.outputs.backend_not_set == 'true'
         run: terraform init -backend=false
@@ -58,6 +62,10 @@ jobs:
       - name: Terraform Apply (create storage)
         if: steps.check_backend.outputs.backend_not_set == 'true'
         run: terraform apply -auto-approve
+
+      - name: Restore backend.tf
+        if: steps.check_backend.outputs.backend_not_set == 'true'
+        run: mv backend.tf.bak backend.tf 
 
       - name: Get Storage Account Name
         if: steps.check_backend.outputs.backend_not_set == 'true'
