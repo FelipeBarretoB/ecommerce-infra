@@ -93,7 +93,7 @@ jobs:
 
       - name: Terraform Init (with backend)
         if: steps.check_backend.outputs.backend_not_set == 'false'
-        run: terraform init
+        run: terraform init -reconfigure
 
       - name: Terraform Plan
         if: steps.check_backend.outputs.backend_not_set == 'false'

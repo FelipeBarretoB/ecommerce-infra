@@ -60,19 +60,6 @@ resource "azurerm_resource_group" "rg2" {
   location = "West Europe"
 }
 
-resource "azurerm_storage_account" "tfstate2" {
-  name                     = "ecommercetfstate2${random_string.suffix2.result}"
-  resource_group_name      = azurerm_resource_group.rg2.name
-  location                 = azurerm_resource_group.rg2.location
-  account_tier             = "Standard"
-  account_replication_type = "LRS"
-}
-
-resource "azurerm_storage_container" "tfstate2" {
-  name                  = "tfstate"
-  storage_account_id    = azurerm_storage_account.tfstate2.id
-  container_access_type = "private"
-}
 
 resource "azurerm_kubernetes_cluster" "aks2" {
   name                = "ecommerce-aks"
