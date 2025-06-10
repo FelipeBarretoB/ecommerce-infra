@@ -50,7 +50,7 @@ resource "azurerm_kubernetes_cluster" "aks1" {
 resource "azurerm_kubernetes_cluster_node_pool" "d2pool1" {
   name                  = "d2pool"
   kubernetes_cluster_id = azurerm_kubernetes_cluster.aks1.id
-  vm_size               = "Standard_D2a_v3"
+  vm_size               = "Standard_D2s_v3"
   node_count            = 1
 }
 
@@ -83,7 +83,7 @@ resource "azurerm_kubernetes_cluster" "aks2" {
   default_node_pool {
     name       = "tempnodepool"
     node_count = 1
-    vm_size    = "Standard_E4s_v3"
+    vm_size    = "Standard_D2s_v3"
   }
 
   identity {
