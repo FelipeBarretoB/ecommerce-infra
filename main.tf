@@ -1,9 +1,3 @@
-resource "random_string" "suffix1" {
-  length  = 6
-  upper   = false
-  special = false
-}
-
 # Resource Group and Storage for Cluster 1
 resource "azurerm_resource_group" "rg1" {
   name     = "ecommerce-rg"
@@ -11,7 +5,7 @@ resource "azurerm_resource_group" "rg1" {
 }
 
 resource "azurerm_storage_account" "tfstate1" {
-  name                     = "ecommercetfstate1${random_string.suffix1.result}"
+  name                     = "ecommercetfstate1bl0fci"
   resource_group_name      = azurerm_resource_group.rg1.name
   location                 = azurerm_resource_group.rg1.location
   account_tier             = "Standard"
