@@ -105,6 +105,7 @@ jobs:
           terraform import azurerm_kubernetes_cluster.aks2 /subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/ecommerce-rg-2/providers/Microsoft.ContainerService/managedClusters/ecommerce-aks || echo "Already imported"
           terraform import azurerm_storage_account.tfstate1 /subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/ecommerce-rg/providers/Microsoft.Storage/storageAccounts/ecommercetfstate1bl0fci
           terraform import azurerm_storage_container.tfstate1 /subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/ecommerce-rg/providers/Microsoft.Storage/storageAccounts/ecommercetfstate1bl0fci/blobServices/default/containers/tfstate
+          terraform import azurerm_kubernetes_cluster_node_pool.d2pool1 /subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/ecommerce-rg/providers/Microsoft.ContainerService/managedClusters/ecommerce-cluster/agentPools/d2pool
 
       - name: Terraform Plan
         if: steps.check_backend.outputs.backend_not_set == 'false'
