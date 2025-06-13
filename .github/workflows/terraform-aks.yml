@@ -44,5 +44,11 @@ jobs:
         run: |
           terraform init
 
+      - name: Terraform Format
+        run: terraform fmt -check
+
+      - name: Terraform Validate
+        run: terraform validate
+
       - name: Terraform Apply
         run: terraform apply -auto-approve
