@@ -1,0 +1,38 @@
+---
+- name: Install and expose ArgoCD on multiple AKS clusters
+  hosts: localhost
+  gather_facts: no
+  vars:
+    clusters:
+      - { azure_rg: ecommerce-rg,   aks_name: ecommerce-cluster }
+      - { azure_rg: ecommerce-rg-2, aks_name: ecommerce-aks }
+    argocd_namespace: argocd
+
+  tasks:
+    - name: Install ArgoCD on each AKS cluster
+      block:
+        - name: Get AKS credentials
+          ansible.builtin.command: >
+            az aks get-credentials --resource-group {{ item.azure_rg }} --name {{ item.aks_name }} --overwrite-existing
+
+        - name: Create ArgoCD namespace
+          ansible.builtin.command: kubectl create namespace {{ argocd_namespace }}
+          register: ns_result
+          failed_when: false
+          changed_when: "'created' in ns_result.stdout"
+
+        - name: Install ArgoCD
+          ansible.builtin.command: kubectl apply -n {{ argocd_namespace }} -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+
+        - name: Expose ArgoCD via LoadBalancer
+          ansible.builtin.command: >
+            kubectl patch svc argocd-server -n {{ argocd_namespace }} -p '{"spec": {"type": "LoadBalancer"}}'
+
+        - name: Get initial ArgoCD admin password
+          ansible.builtin.shell: kubectl get secret argocd-initial-admin-secret -n {{ argocd_namespace }} -o jsonpath="{.data.password}" | base64 -d
+          register: argocd_password
+
+        - name: Show initial ArgoCD admin password
+          ansible.builtin.debug:
+            msg: "The initial ArgoCD admin password for {{ item.aks_name }} is: {{ argocd_password.stdout }}"
+      loop: "{{ clusters }}"
